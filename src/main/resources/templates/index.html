@@ -1,0 +1,25 @@
+<!DOCTYPE HTML>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>ADT DevOps</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <link th:href="@{/index.css}" rel="stylesheet" />
+</head>
+<body>
+  <h1>ADT DevOps</h1>
+  <p th:text="|Your name: ${name}!|" />
+  <form action="#" th:action="@{/api/name}" method="get">
+      <button type="submit">Get name</button>
+  </form>
+  <form action="#" th:action="@{/api/submit/animal}" th:object="${textInput}" method="post">
+      <label for="animalInput">Enter new animal:</label>
+      <input type="text" id="animalInput" name="textInput"/>
+      <button type="submit">Submit</button>
+  </form>
+  <form action="#" th:action="@{/api/submit/adjective}" th:object="${textInput}" method="post">
+      <label for="adjectiveInput">Enter new adjective:</label>
+      <input type="text" id="adjectiveInput" name="textInput"/>
+      <button type="submit">Submit</button>
+  </form>
+</body>
+</html>
