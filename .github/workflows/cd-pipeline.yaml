@@ -14,7 +14,7 @@ jobs:
     steps:
       - name: Download release artifact
         run: |
-          gh release download ${{ github.event.inputs.version }} --pattern "*.jar"
+          gh release download ${{ github.event.inputs.version }} --repo ${{ github.repository }} --pattern "*.jar"
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
@@ -24,10 +24,14 @@ jobs:
           echo "${{ secrets.EC2_PRIVATE_KEY }}" > ~/.ssh/id_rsa
           chmod 600 ~/.ssh/id_rsa
 
+      - name: Ensure remote app directory exists
+        run: |
+          ssh -o StrictHostKeyChecking=no ec2-user@3.10.52.0 "mkdir -p /home/ec2-user/app/"
+
       - name: Deploy to EC2
         run: |
-          scp -o StrictHostKeyChecking=no *.jar ec2-user@<EC2_IP>:/home/ec2-user/app/
-          ssh -o StrictHostKeyChecking=no ec2-user@<EC2_IP> << 'EOF'
+          scp -o StrictHostKeyChecking=no *.jar ec2-user@3.10.52.0:/home/ec2-user/app/
+          ssh -o StrictHostKeyChecking=no ec2-user@3.10.52.0 << 'EOF'
             pkill -f 'java -jar' || true
             nohup java -jar /home/ec2-user/app/*.jar > /home/ec2-user/app/output.log 2>&1 &
           EOF
