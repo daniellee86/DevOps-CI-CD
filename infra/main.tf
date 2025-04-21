@@ -10,9 +10,10 @@ resource "aws_instance" "web" {
 
   user_data = <<-EOF
               #!/bin/bash
-              sudo yum update -y
-              sudo yum install -y java-1.8.0-openjdk
-              mkdir -p /home/ec2-user/app
+              sudo apt update -y
+              sudo apt install openjdk-17-jre-headless -y
+              mkdir -p /home/ubuntu/app
+              chown -R ubuntu:ubuntu /home/ubuntu/app
               EOF
 
   tags = {
