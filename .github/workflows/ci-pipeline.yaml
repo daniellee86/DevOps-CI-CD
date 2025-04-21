@@ -21,19 +21,15 @@ jobs:
           java-version: "17"
           distribution: "temurin"
 
+      - name: Build and Test
+        run: mvn clean install
+
       - name: Bump version and push tag
         id: version
         uses: mathieudutour/github-tag-action@v6.1
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           default_bump: patch
-
-      - name: Update version in pom.xml
-        run: |
-          sed -i "s/<version>.*<\/version>/<version>${{ steps.version.outputs.new_version }}<\/version>/" pom.xml
-
-      - name: Build and Test
-        run: mvn clean install
 
       - name: Release .jar
         uses: softprops/action-gh-release@v1
