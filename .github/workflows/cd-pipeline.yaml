@@ -26,12 +26,12 @@ jobs:
 
       - name: Ensure remote app directory exists
         run: |
-          ssh -o StrictHostKeyChecking=no ubuntu@3.10.52.0 "mkdir -p /home/ubuntu/app/"
+          ssh -o StrictHostKeyChecking=no ubuntu@18.169.17.85 "mkdir -p /home/ubuntu/app/"
 
       - name: Deploy to EC2
         run: |
-          scp -o StrictHostKeyChecking=no *.jar ubuntu@3.10.52.0:/home/ubuntu/app/
-          ssh -o StrictHostKeyChecking=no ubuntu@3.10.52.0 << 'EOF'
+          scp -o StrictHostKeyChecking=no *.jar ubuntu@18.169.17.85:/home/ubuntu/app/
+          ssh -o StrictHostKeyChecking=no ubuntu@18.169.17.85 << 'EOF'
             pkill -f 'java -jar' || true
             nohup java -jar /home/ubuntu/app/*.jar > /home/ubuntu/app/output.log 2>&1 &
           EOF
