@@ -36,10 +36,9 @@ jobs:
         run: terraform apply -auto-approve -var="key_pair_name=devops-key" -var="aws_region=eu-west-2"
 
       - name: Get EC2 Public IP
-        id: ec2_ip
         working-directory: ./infra
         run: |
-          echo "ip=$(terraform output -raw instance_ip | tr -d '\r\n')" >> $GITHUB_OUTPUT
+          echo "EC2_PUBLIC_IP=$(terraform output -raw instance_ip | tr -d '\r\n')" >> $GITHUB_ENV
 
       - name: Download release artifact
         run: |
@@ -55,12 +54,12 @@ jobs:
 
       - name: Ensure remote app directory exists
         run: |
-          ssh -o StrictHostKeyChecking=no ubuntu@${{ steps.ec2_ip.outputs.ip }} "mkdir -p /home/ubuntu/app/"
+          ssh -o StrictHostKeyChecking=no ubuntu@$EC2_PUBLIC_IP "mkdir -p /home/ubuntu/app/"
 
       - name: Deploy to EC2
         run: |
-          scp -o StrictHostKeyChecking=no *.jar ubuntu@${{ steps.ec2_ip.outputs.ip }}:/home/ubuntu/app/
-          ssh -o StrictHostKeyChecking=no ubuntu@${{ steps.ec2_ip.outputs.ip }} << 'EOF'
+          scp -o StrictHostKeyChecking=no *.jar ubuntu@$EC2_PUBLIC_IP:/home/ubuntu/app/
+          ssh -o StrictHostKeyChecking=no ubuntu@$EC2_PUBLIC_IP << 'EOF'
             pkill -f 'java -jar' || true
             nohup java -jar /home/ubuntu/app/*.jar > /home/ubuntu/app/output.log 2>&1 &
           EOF
