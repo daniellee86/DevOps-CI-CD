@@ -48,4 +48,5 @@ resource "aws_security_group" "web_sg" {
 
 output "instance_ip" {
   value = aws_instance.web.public_ip
+  description = "The public IP of the EC2 instance"
 }
