@@ -12,6 +12,35 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v2
+        with:
+          terraform_version: 1.7.5
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: eu-west-2
+
+      - name: Terraform Init
+        working-directory: ./infra
+        run: terraform init
+
+      - name: Terraform Apply
+        working-directory: ./infra
+        run: terraform apply -auto-approve -var="key_pair_name=devops-key" -var="aws_region=eu-west-2"
+
+      - name: Get EC2 Public IP
+        id: ec2_ip
+        working-directory: ./infra
+        run: |
+          echo "EC2_PUBLIC_IP=$(terraform output -raw instance_ip)" >> $GITHUB_ENV
+
       - name: Download release artifact
         run: |
           gh release download ${{ github.event.inputs.version }} --repo ${{ github.repository }} --pattern "*.jar"
@@ -26,12 +55,50 @@ jobs:
 
       - name: Ensure remote app directory exists
         run: |
-          ssh -o StrictHostKeyChecking=no ubuntu@18.169.17.85 "mkdir -p /home/ubuntu/app/"
+          ssh -o StrictHostKeyChecking=no ubuntu@$EC2_PUBLIC_IP "mkdir -p /home/ubuntu/app/"
 
       - name: Deploy to EC2
         run: |
-          scp -o StrictHostKeyChecking=no *.jar ubuntu@18.169.17.85:/home/ubuntu/app/
-          ssh -o StrictHostKeyChecking=no ubuntu@18.169.17.85 << 'EOF'
+          scp -o StrictHostKeyChecking=no *.jar ubuntu@$EC2_PUBLIC_IP:/home/ubuntu/app/
+          ssh -o StrictHostKeyChecking=no ubuntu@$EC2_PUBLIC_IP << 'EOF'
             pkill -f 'java -jar' || true
             nohup java -jar /home/ubuntu/app/*.jar > /home/ubuntu/app/output.log 2>&1 &
           EOF
+
+# name: CD Pipeline
+
+# on:
+#   workflow_dispatch:
+#     inputs:
+#       version:
+#         description: "Release version (e.g. v1.0.3)"
+#         required: true
+
+# jobs:
+#   deploy:
+#     runs-on: ubuntu-latest
+
+#     steps:
+#       - name: Download release artifact
+#         run: |
+#           gh release download ${{ github.event.inputs.version }} --repo ${{ github.repository }} --pattern "*.jar"
+#         env:
+#           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+#       - name: Set up SSH key
+#         run: |
+#           mkdir -p ~/.ssh
+#           echo "${{ secrets.EC2_PRIVATE_KEY }}" | tr -d '\r' > ~/.ssh/id_rsa
+#           chmod 600 ~/.ssh/id_rsa
+
+#       - name: Ensure remote app directory exists
+#         run: |
+#           ssh -o StrictHostKeyChecking=no ubuntu@18.169.17.85 "mkdir -p /home/ubuntu/app/"
+
+#       - name: Deploy to EC2
+#         run: |
+#           scp -o StrictHostKeyChecking=no *.jar ubuntu@18.169.17.85:/home/ubuntu/app/
+#           ssh -o StrictHostKeyChecking=no ubuntu@18.169.17.85 << 'EOF'
+#             pkill -f 'java -jar' || true
+#             nohup java -jar /home/ubuntu/app/*.jar > /home/ubuntu/app/output.log 2>&1 &
+#           EOF
