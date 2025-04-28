@@ -39,8 +39,7 @@ jobs:
         id: ec2_ip
         working-directory: ./infra
         run: |
-          IP=$(terraform output -raw instance_ip)
-          echo "ip=$IP" >> $GITHUB_OUTPUT
+          echo "ip=$(terraform output -raw instance_ip | tr -d '\r\n')" >> $GITHUB_OUTPUT
 
       - name: Download release artifact
         run: |
